@@ -3,16 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>遊戲王 - 幾何圖形對對碰</title>
+    <title>遊戲王 - 幾何圖形空間對對碰</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <!-- 頂部資訊列：精簡高度，讓出最大空間給雙棋盤 -->
     <header>
+        <div class="difficulty-toggle">
+            <button id="btn-diff-easy" class="diff-btn active" onclick="switchDifficulty('easy')">初階 (2×2)</button>
+            <button id="btn-diff-hard" class="diff-btn" onclick="switchDifficulty('hard')">進階 (3×3)</button>
+        </div>
         <div id="star-container"></div>
         <div id="message-area">把圖形放到正確位置！</div>
     </header>
 
+    <!-- 雙九宮格/四宮格核心區域 -->
     <main id="game-wrapper">
         <div class="game-area">
             <!-- 上方/左側：觀察區 -->
@@ -21,7 +27,7 @@
                 <div id="target-grid" class="grid"></div>
             </section>
 
-            <!-- 下方/右側：作答區（增加下方安全距離，微微上移） -->
+            <!-- 下方/右側：作答區（微微上移，與下方拖放池維持充足安全距離） -->
             <section class="board-container player-container">
                 <div class="board-label">試一試 💪</div>
                 <div id="player-grid" class="grid"></div>
@@ -29,16 +35,16 @@
         </div>
     </main>
 
-    <!-- 底部操作與圖形放置池 -->
+    <!-- 底部形狀池與過關按鈕 -->
     <footer class="bottom-shelf">
         <div class="shape-pool" id="shape-pool"></div>
         <button id="next-btn" class="action-btn" onclick="nextLevel()">下一頁 ➔</button>
     </footer>
 
-    <!-- 全通關結算畫面 -->
+    <!-- 全通關結算大畫面 -->
     <div id="end-screen">
         <div class="big-icon">🏆✨</div>
-        <div class="end-message">太棒了，全部完成了！</div>
+        <div class="end-message">太棒了，你展現了堅持不懈的精神！</div>
         <button class="action-btn play-again-btn" onclick="startGame()">再玩一次</button>
     </div>
 
