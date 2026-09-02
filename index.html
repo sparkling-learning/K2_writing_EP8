@@ -8,10 +8,8 @@
         :root {
             --primary-color: #2B579A; 
             --bg-color: #F7F9FC;
-            --grid-border: #333333;
-            --success-color: #2E7D32;
-            --star-color: #FFB300;
-            --cell-size: min(12vw, 5.5vh, 65px);
+            --grid-border: #222222;
+            --cell-size: 70px; /* 由 JS 動態計算並即時更新 */
         }
 
         * {
@@ -24,12 +22,11 @@
         html, body {
             margin: 0;
             padding: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
             height: 100dvh;
             overflow: hidden;
             background-color: var(--bg-color);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang TC', '微軟正黑體', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang TC', '微軟正黑體', sans-serif;
         }
 
         body {
@@ -37,43 +34,38 @@
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            padding: 8px 12px;
+            padding: env(safe-area-inset-top, 6px) 6px env(safe-area-inset-bottom, 6px) 6px;
         }
 
-        /* 頂部資訊區 */
+        /* 頂部整合資訊列（高度壓縮在 40px 內，釋放最大空間給棋盤） */
         header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             width: 100%;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
             flex-shrink: 0;
         }
 
-        h1 {
-            color: var(--primary-color);
-            font-size: clamp(16px, 3.5vh, 22px);
-            margin: 0;
-            text-align: center;
-        }
-
         #star-container {
-            font-size: clamp(18px, 3.5vh, 26px);
-            letter-spacing: 4px;
-            height: 30px;
-            line-height: 30px;
-            color: var(--star-color);
+            font-size: 20px;
+            letter-spacing: 2px;
+            min-width: 80px;
         }
 
         #message-area {
-            font-size: clamp(14px, 2.5vh, 18px);
-            font-weight: 700;
+            font-size: 17px;
+            font-weight: 800;
             color: var(--primary-color);
-            min-height: 24px;
             text-align: center;
-            transition: color 0.3s;
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        /* 遊戲核心互動區 */
+        /* 核心棋盤區域 */
         #game-wrapper {
             display: flex;
             flex-direction: column;
@@ -81,27 +73,23 @@
             justify-content: center;
             width: 100%;
             flex-grow: 1;
-            gap: 8px;
             min-height: 0;
         }
 
         .game-area {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            flex-direction: column; /* 直向手機上下排列 */
+            gap: 12px;
             justify-content: center;
             align-items: center;
             width: 100%;
         }
 
-        /* 螢幕較寬（平板橫向、電腦）時左右並排 */
-        @media (min-width: 600px) and (min-height: 480px) {
-            :root {
-                --cell-size: min(14vw, 10vh, 75px);
-            }
+        /* 平板或橫向手機左右排列 */
+        @media (orientation: landscape), (min-width: 700px) {
             .game-area {
                 flex-direction: row;
-                gap: 30px;
+                gap: 20px;
             }
         }
 
@@ -112,28 +100,28 @@
         }
 
         .board-label {
-            font-size: clamp(13px, 2.2vh, 16px);
+            font-size: 15px;
             margin-bottom: 4px;
-            color: #333;
-            font-weight: 700;
-            background: #e9eff7;
-            padding: 3px 12px;
-            border-radius: 12px;
+            color: #111;
+            font-weight: 800;
+            background: #E2EAF4;
+            padding: 2px 14px;
+            border-radius: 20px;
         }
 
         .grid {
             display: grid;
             grid-template-columns: repeat(3, var(--cell-size));
             grid-template-rows: repeat(3, var(--cell-size));
-            border: 2px solid var(--grid-border);
-            background-color: #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            border: 3px solid var(--grid-border);
+            background-color: #ffffff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
         }
 
         .cell {
-            border: 1px solid var(--grid-border);
-            width: 100%;
-            height: 100%;
+            border: 1.5px solid var(--grid-border);
+            width: var(--cell-size);
+            height: var(--cell-size);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -141,30 +129,38 @@
         }
 
         .player-cell.drag-over {
-            background-color: #E3F2FD;
-            outline: 2px dashed var(--primary-color);
-            outline-offset: -2px;
+            background-color: #D3E3FD;
+            outline: 3px dashed var(--primary-color);
+            outline-offset: -3px;
         }
 
-        /* 待選圖形池 */
-        .shape-pool {
+        /* 待選圖形池（高度與寬度放大） */
+        .bottom-shelf {
+            width: 100%;
+            height: calc(var(--cell-size) + 18px);
             display: flex;
-            gap: 16px;
-            padding: 8px 16px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            min-height: calc(var(--cell-size) + 12px);
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            width: fit-content;
-            max-width: 100%;
+            margin-bottom: 2px;
         }
 
+        .shape-pool {
+            display: flex;
+            gap: 20px;
+            padding: 4px 18px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 圖形尺寸占滿格子的 88%，並加大點擊判斷面積 */
         .shape {
-            width: calc(var(--cell-size) * 0.85);
-            height: calc(var(--cell-size) * 0.85);
+            width: calc(var(--cell-size) * 0.88);
+            height: calc(var(--cell-size) * 0.88);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -178,46 +174,28 @@
             pointer-events: none;
         }
 
-        .shape.draggable {
-            transition: transform 0.15s;
-        }
-
+        /* 拖曳中的手感優化：以指尖為中心微放大 */
         .shape.dragging {
             position: fixed;
             pointer-events: none;
-            z-index: 1000;
-            opacity: 0.85;
-            transform: scale(1.15) translate(-50%, -50%);
+            z-index: 9999;
+            opacity: 0.9;
+            transform: scale(1.18) translate(-50%, -50%);
             transform-origin: top left;
         }
 
-        /* 操作控制與過關畫面 */
-        .action-container {
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        button {
-            padding: 8px 24px;
-            font-size: 16px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 700;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-        }
-
-        button:active {
-            transform: scale(0.97);
-        }
-
+        /* 過關及操作按鈕 */
         #next-btn {
             display: none;
+            padding: 10px 28px;
+            font-size: 18px;
+            background-color: #2E7D32;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
         #end-screen {
@@ -226,33 +204,36 @@
             align-items: center;
             justify-content: center;
             flex-grow: 1;
-            animation: popIn 0.4s ease-out;
         }
 
         .big-icon {
-            font-size: clamp(60px, 12vh, 90px);
-            margin-bottom: 8px;
+            font-size: 90px;
+            margin-bottom: 10px;
         }
 
         .end-message {
-            font-size: clamp(20px, 4vh, 26px);
-            color: var(--success-color);
-            font-weight: 700;
-            margin-bottom: 20px;
+            font-size: 26px;
+            color: #2E7D32;
+            font-weight: 900;
+            margin-bottom: 24px;
         }
 
-        @keyframes popIn {
-            0% { transform: scale(0.85); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
+        .play-again-btn {
+            padding: 12px 32px;
+            font-size: 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>強化視覺辨識與記憶力</h1>
         <div id="star-container"></div>
-        <div id="message-area">準備好就開始吧！</div>
+        <div id="message-area">把圖形放到正確位置！</div>
     </header>
 
     <div id="game-wrapper">
@@ -266,25 +247,24 @@
                 <div id="player-grid" class="grid"></div>
             </div>
         </div>
-
-        <div class="shape-pool" id="shape-pool"></div>
     </div>
 
-    <div class="action-container">
-        <button id="next-btn" onclick="nextLevel()">下一頁</button>
+    <div class="bottom-shelf">
+        <div class="shape-pool" id="shape-pool"></div>
+        <button id="next-btn" onclick="nextLevel()">下一頁 ➔</button>
     </div>
 
     <div id="end-screen">
         <div class="big-icon">🏆✨</div>
-        <div class="end-message">太棒了，任務完成！</div>
-        <button onclick="startGame()">再玩一次</button>
+        <div class="end-message">太棒了，全部完成了！</div>
+        <button class="play-again-btn" onclick="startGame()">再玩一次</button>
     </div>
 
     <script>
         const SHAPES_HTML = {
-            triangle: '<svg viewBox="0 0 100 100"><polygon points="50,12 88,85 12,85" fill="none" stroke="#2B579A" stroke-width="8"/></svg>',
-            circle: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="#2B579A" stroke-width="8"/></svg>',
-            rectangle: '<svg viewBox="0 0 100 100"><rect x="15" y="28" width="70" height="44" fill="none" stroke="#2B579A" stroke-width="8"/></svg>'
+            triangle: '<svg viewBox="0 0 100 100"><polygon points="50,8 92,88 8,88" fill="none" stroke="#2B579A" stroke-width="10" stroke-linejoin="round"/></svg>',
+            circle: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#2B579A" stroke-width="10"/></svg>',
+            rectangle: '<svg viewBox="0 0 100 100"><rect x="12" y="24" width="76" height="52" rx="4" fill="none" stroke="#2B579A" stroke-width="10"/></svg>'
         };
         const SHAPE_TYPES = ['triangle', 'circle', 'rectangle'];
 
@@ -302,6 +282,38 @@
         const starContainer = document.getElementById('star-container');
         const gameWrapper = document.getElementById('game-wrapper');
         const endScreen = document.getElementById('end-screen');
+
+        // 自動將格子尺寸算到視窗極限（直向／橫向自動適應）
+        function resizeGridsToFitScreen() {
+            const isLandscape = window.innerWidth > window.innerHeight || window.innerWidth >= 700;
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+
+            // 扣除頂部（40px）及底部操作列（約 90px）與內邊距
+            const availableH = screenH - 140;
+            const availableW = screenW - 24;
+
+            let targetCellSize;
+
+            if (isLandscape) {
+                // 橫向：兩組 3 欄並列，共有 6 欄
+                const sizeByW = (availableW - 40) / 6;
+                const sizeByH = (availableH - 30) / 3;
+                targetCellSize = Math.floor(Math.min(sizeByW, sizeByH));
+            } else {
+                // 直向：兩組 3 列上下疊放，共有 6 列
+                const sizeByW = (availableW - 20) / 3;
+                const sizeByH = (availableH - 60) / 6;
+                targetCellSize = Math.floor(Math.min(sizeByW, sizeByH));
+            }
+
+            // 限制最大極限，避免超大螢幕失真
+            targetCellSize = Math.max(50, Math.min(targetCellSize, 110));
+            document.documentElement.style.setProperty('--cell-size', `${targetCellSize}px`);
+        }
+
+        window.addEventListener('resize', resizeGridsToFitScreen);
+        window.addEventListener('orientationchange', () => setTimeout(resizeGridsToFitScreen, 150));
 
         function generateRandomLevel() {
             let positions = [];
@@ -322,6 +334,8 @@
             updateStars();
             endScreen.style.display = 'none';
             gameWrapper.style.display = 'flex';
+            document.querySelector('.bottom-shelf').style.display = 'flex';
+            resizeGridsToFitScreen();
             initLevel();
         }
 
@@ -331,9 +345,10 @@
             playerGrid.innerHTML = '';
             shapePool.innerHTML = '';
             
-            messageArea.textContent = `第 ${currentLevel + 1} 頁：請把它們放到正確的位置！`;
+            messageArea.textContent = `第 ${currentLevel + 1} 頁：請放好圖形！`;
             messageArea.style.color = 'var(--primary-color)';
             nextBtn.style.display = 'none';
+            shapePool.style.display = 'flex';
 
             currentLevelData = generateRandomLevel();
 
@@ -398,9 +413,7 @@
                 shapeDiv.classList.remove('dragging');
                 shapeDiv.style.left = '';
                 shapeDiv.style.top = '';
-                if (currentHoverCell) {
-                    currentHoverCell.classList.remove('drag-over');
-                }
+                if (currentHoverCell) currentHoverCell.classList.remove('drag-over');
 
                 const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
                 const cell = dropTarget ? dropTarget.closest('.player-cell') : null;
@@ -417,7 +430,7 @@
                         shapeDiv.remove();
 
                         placedCount++;
-                        messageArea.textContent = "欣賞你，你好努力！💪";
+                        messageArea.textContent = "好厲害，放對了！💪";
                         messageArea.style.color = "var(--primary-color)";
 
                         if (placedCount === currentLevelData.requiredCount) {
@@ -445,14 +458,15 @@
         function levelComplete() {
             earnedStars++;
             updateStars();
-            messageArea.textContent = "太棒了，完成這頁了！🌟";
-            messageArea.style.color = "var(--success-color)";
+            messageArea.textContent = "太棒了，完成了！🌟";
+            messageArea.style.color = "#2E7D32";
             currentLevel++;
 
+            shapePool.style.display = 'none';
             if (currentLevel < MAX_LEVELS) {
                 nextBtn.style.display = 'block';
             } else {
-                setTimeout(showEndScreen, 700);
+                setTimeout(showEndScreen, 600);
             }
         }
 
@@ -466,11 +480,13 @@
 
         function showEndScreen() {
             gameWrapper.style.display = 'none';
+            document.querySelector('.bottom-shelf').style.display = 'none';
             messageArea.textContent = '';
-            nextBtn.style.display = 'none';
             endScreen.style.display = 'flex';
         }
 
+        // 啟動
+        resizeGridsToFitScreen();
         startGame();
     </script>
 </body>
