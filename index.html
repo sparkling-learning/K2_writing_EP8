@@ -2,67 +2,107 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>遊戲王 - 幾何圖形對對碰</title>
     <style>
         :root {
             --primary-color: #2B579A; 
             --bg-color: #F7F9FC;
             --grid-border: #333333;
-            --success-color: #4CAF50;
-            --star-color: #FFD700;
+            --success-color: #2E7D32;
+            --star-color: #FFB300;
+            --cell-size: min(12vw, 5.5vh, 65px);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang TC', '微軟正黑體', sans-serif;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, '微軟正黑體';
-            background-color: var(--bg-color);
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 0;
-            padding: 20px;
-            touch-action: none; 
+            justify-content: space-between;
+            padding: 8px 12px;
         }
 
-        h1 {
-            color: var(--primary-color);
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        #star-container {
-            font-size: 32px;
-            letter-spacing: 5px;
-            min-height: 45px;
-            margin-bottom: 10px;
-            color: var(--star-color);
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-        }
-
-        #message-area {
-            font-size: 22px;
-            font-weight: bold;
-            color: var(--primary-color);
-            min-height: 35px;
-            margin-bottom: 20px;
-            text-align: center;
-            transition: color 0.3s;
-        }
-
-        /* 遊戲主要區域 */
-        #game-wrapper {
+        /* 頂部資訊區 */
+        header {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: clamp(16px, 3.5vh, 22px);
+            margin: 0;
+            text-align: center;
+        }
+
+        #star-container {
+            font-size: clamp(18px, 3.5vh, 26px);
+            letter-spacing: 4px;
+            height: 30px;
+            line-height: 30px;
+            color: var(--star-color);
+        }
+
+        #message-area {
+            font-size: clamp(14px, 2.5vh, 18px);
+            font-weight: 700;
+            color: var(--primary-color);
+            min-height: 24px;
+            text-align: center;
+            transition: color 0.3s;
+        }
+
+        /* 遊戲核心互動區 */
+        #game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            flex-grow: 1;
+            gap: 8px;
+            min-height: 0;
         }
 
         .game-area {
             display: flex;
-            gap: 40px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 10px;
             justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* 螢幕較寬（平板橫向、電腦）時左右並排 */
+        @media (min-width: 600px) and (min-height: 480px) {
+            :root {
+                --cell-size: min(14vw, 10vh, 75px);
+            }
+            .game-area {
+                flex-direction: row;
+                gap: 30px;
+            }
         }
 
         .board-container {
@@ -72,21 +112,22 @@
         }
 
         .board-label {
-            font-size: 20px;
-            margin-bottom: 12px;
+            font-size: clamp(13px, 2.2vh, 16px);
+            margin-bottom: 4px;
             color: #333;
-            font-weight: bold;
+            font-weight: 700;
             background: #e9eff7;
-            padding: 5px 15px;
-            border-radius: 20px;
+            padding: 3px 12px;
+            border-radius: 12px;
         }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(3, 80px);
-            grid-template-rows: repeat(3, 80px);
+            grid-template-columns: repeat(3, var(--cell-size));
+            grid-template-rows: repeat(3, var(--cell-size));
             border: 2px solid var(--grid-border);
-            background-color: white;
+            background-color: #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
         }
 
         .cell {
@@ -96,103 +137,123 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            box-sizing: border-box;
+            position: relative;
         }
 
         .player-cell.drag-over {
             background-color: #E3F2FD;
-            border: 2px dashed var(--primary-color);
+            outline: 2px dashed var(--primary-color);
+            outline-offset: -2px;
         }
 
+        /* 待選圖形池 */
         .shape-pool {
             display: flex;
-            gap: 20px;
-            padding: 20px;
+            gap: 16px;
+            padding: 8px 16px;
             background: white;
             border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            min-height: 80px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            min-height: calc(var(--cell-size) + 12px);
             align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: fit-content;
+            max-width: 100%;
         }
 
         .shape {
-            width: 60px;
-            height: 60px;
-            cursor: grab;
+            width: calc(var(--cell-size) * 0.85);
+            height: calc(var(--cell-size) * 0.85);
             display: flex;
             justify-content: center;
             align-items: center;
-        }
-
-        .shape:active {
-            cursor: grabbing;
-            transform: scale(1.1);
+            touch-action: none;
+            cursor: grab;
         }
 
         .shape svg {
             width: 100%;
             height: 100%;
-            pointer-events: none; 
+            pointer-events: none;
         }
 
-        /* 結局大畫面 */
-        #end-screen {
-            display: none;
-            flex-direction: column;
+        .shape.draggable {
+            transition: transform 0.15s;
+        }
+
+        .shape.dragging {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.85;
+            transform: scale(1.15) translate(-50%, -50%);
+            transform-origin: top left;
+        }
+
+        /* 操作控制與過關畫面 */
+        .action-container {
+            height: 44px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            animation: popIn 0.5s ease-out;
-            margin-top: 20px;
-        }
-
-        .big-icon {
-            font-size: 100px;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .end-message {
-            font-size: 28px;
-            color: var(--success-color);
-            font-weight: bold;
-            margin-bottom: 30px;
+            flex-shrink: 0;
         }
 
         button {
-            padding: 12px 30px;
-            font-size: 20px;
+            padding: 8px 24px;
+            font-size: 16px;
             background-color: var(--primary-color);
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.1s;
+            font-weight: 700;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
         }
 
         button:active {
-            transform: translateY(2px);
+            transform: scale(0.97);
         }
 
         #next-btn {
             display: none;
-            margin-top: 20px;
+        }
+
+        #end-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            animation: popIn 0.4s ease-out;
+        }
+
+        .big-icon {
+            font-size: clamp(60px, 12vh, 90px);
+            margin-bottom: 8px;
+        }
+
+        .end-message {
+            font-size: clamp(20px, 4vh, 26px);
+            color: var(--success-color);
+            font-weight: 700;
+            margin-bottom: 20px;
         }
 
         @keyframes popIn {
-            0% { transform: scale(0.8); opacity: 0; }
+            0% { transform: scale(0.85); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-    <h1>強化視覺辨識與記憶力</h1>
-    
-    <div id="star-container"></div>
-    
-    <div id="message-area">準備好就開始吧！</div>
+    <header>
+        <h1>強化視覺辨識與記憶力</h1>
+        <div id="star-container"></div>
+        <div id="message-area">準備好就開始吧！</div>
+    </header>
 
     <div id="game-wrapper">
         <div class="game-area">
@@ -206,9 +267,10 @@
             </div>
         </div>
 
-        <div class="shape-pool" id="shape-pool">
-            </div>
+        <div class="shape-pool" id="shape-pool"></div>
+    </div>
 
+    <div class="action-container">
         <button id="next-btn" onclick="nextLevel()">下一頁</button>
     </div>
 
@@ -220,22 +282,18 @@
 
     <script>
         const SHAPES_HTML = {
-            triangle: '<svg viewBox="0 0 100 100"><polygon points="50,10 90,85 10,85" fill="none" stroke="#2B579A" stroke-width="6"/></svg>',
-            circle: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="#2B579A" stroke-width="6"/></svg>',
-            rectangle: '<svg viewBox="0 0 100 100"><rect x="15" y="30" width="70" height="40" fill="none" stroke="#2B579A" stroke-width="6"/></svg>'
+            triangle: '<svg viewBox="0 0 100 100"><polygon points="50,12 88,85 12,85" fill="none" stroke="#2B579A" stroke-width="8"/></svg>',
+            circle: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="#2B579A" stroke-width="8"/></svg>',
+            rectangle: '<svg viewBox="0 0 100 100"><rect x="15" y="28" width="70" height="44" fill="none" stroke="#2B579A" stroke-width="8"/></svg>'
         };
         const SHAPE_TYPES = ['triangle', 'circle', 'rectangle'];
 
         let currentLevel = 0;
         const MAX_LEVELS = 5;
         let earnedStars = 0;
-        
         let currentLevelData = null;
         let placedCount = 0;
-        let draggedShapeType = null;
-        let draggedElement = null;
 
-        // DOM 元素
         const targetGrid = document.getElementById('target-grid');
         const playerGrid = document.getElementById('player-grid');
         const shapePool = document.getElementById('shape-pool');
@@ -245,37 +303,28 @@
         const gameWrapper = document.getElementById('game-wrapper');
         const endScreen = document.getElementById('end-screen');
 
-        // 核心邏輯：隨機生成關卡
         function generateRandomLevel() {
             let positions = [];
-            // 在 0-8 之中抽出 3 個不重複的數字
-            while(positions.length < 3) {
+            while (positions.length < 3) {
                 let r = Math.floor(Math.random() * 9);
-                if(positions.indexOf(r) === -1) positions.push(r);
+                if (positions.indexOf(r) === -1) positions.push(r);
             }
-            
             let targetMap = {};
-            // 將三個圖形隨機綁定到抽出的位置上
             targetMap[positions[0]] = 'triangle';
             targetMap[positions[1]] = 'circle';
             targetMap[positions[2]] = 'rectangle';
-
             return { target: targetMap, requiredCount: 3 };
         }
 
-        // 初始化整個遊戲（包含「再玩一次」）
         function startGame() {
             currentLevel = 0;
             earnedStars = 0;
             updateStars();
-            
             endScreen.style.display = 'none';
             gameWrapper.style.display = 'flex';
-            
             initLevel();
         }
 
-        // 渲染單一關卡
         function initLevel() {
             placedCount = 0;
             targetGrid.innerHTML = '';
@@ -286,12 +335,9 @@
             messageArea.style.color = 'var(--primary-color)';
             nextBtn.style.display = 'none';
 
-            // 產生隨機位置
             currentLevelData = generateRandomLevel();
 
-            // 建立 3x3 網格
             for (let i = 0; i < 9; i++) {
-                // 左側：先觀察
                 const targetCell = document.createElement('div');
                 targetCell.className = 'cell';
                 if (currentLevelData.target[i]) {
@@ -299,101 +345,114 @@
                 }
                 targetGrid.appendChild(targetCell);
 
-                // 右側：試一試
                 const playerCell = document.createElement('div');
                 playerCell.className = 'cell player-cell';
                 playerCell.dataset.index = i;
-                playerCell.addEventListener('dragover', handleDragOver);
-                playerCell.addEventListener('dragleave', handleDragLeave);
-                playerCell.addEventListener('drop', handleDrop);
                 playerGrid.appendChild(playerCell);
             }
 
-            // 在下方池子隨機排序產生三個可拖曳圖形
             let poolShapes = [...SHAPE_TYPES].sort(() => Math.random() - 0.5);
-            poolShapes.forEach(type => {
-                createDraggableShape(type);
-            });
+            poolShapes.forEach(type => createPointerDraggableShape(type));
         }
 
-        function createDraggableShape(type) {
+        function createPointerDraggableShape(type) {
             const shapeDiv = document.createElement('div');
             shapeDiv.className = 'shape draggable';
             shapeDiv.dataset.type = type;
             shapeDiv.innerHTML = SHAPES_HTML[type];
-            shapeDiv.draggable = true;
 
-            shapeDiv.addEventListener('dragstart', (e) => {
-                draggedShapeType = type;
-                draggedElement = shapeDiv;
-                e.dataTransfer.effectAllowed = 'move';
-                setTimeout(() => shapeDiv.style.opacity = '0.5', 0);
+            let activePointerId = null;
+            let currentHoverCell = null;
+
+            shapeDiv.addEventListener('pointerdown', (e) => {
+                if (shapeDiv.parentElement !== shapePool) return;
+                activePointerId = e.pointerId;
+                shapeDiv.setPointerCapture(e.pointerId);
+
+                shapeDiv.classList.add('dragging');
+                shapeDiv.style.left = `${e.clientX}px`;
+                shapeDiv.style.top = `${e.clientY}px`;
             });
 
-            shapeDiv.addEventListener('dragend', () => {
-                shapeDiv.style.opacity = '1';
-                draggedShapeType = null;
+            shapeDiv.addEventListener('pointermove', (e) => {
+                if (!shapeDiv.classList.contains('dragging')) return;
+
+                shapeDiv.style.left = `${e.clientX}px`;
+                shapeDiv.style.top = `${e.clientY}px`;
+
+                const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+                const cell = elemBelow ? elemBelow.closest('.player-cell') : null;
+
+                if (currentHoverCell !== cell) {
+                    if (currentHoverCell) currentHoverCell.classList.remove('drag-over');
+                    currentHoverCell = cell;
+                    if (currentHoverCell && !currentHoverCell.hasChildNodes()) {
+                        currentHoverCell.classList.add('drag-over');
+                    }
+                }
             });
+
+            const endDrag = (e) => {
+                if (!shapeDiv.classList.contains('dragging')) return;
+
+                shapeDiv.classList.remove('dragging');
+                shapeDiv.style.left = '';
+                shapeDiv.style.top = '';
+                if (currentHoverCell) {
+                    currentHoverCell.classList.remove('drag-over');
+                }
+
+                const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+                const cell = dropTarget ? dropTarget.closest('.player-cell') : null;
+
+                if (cell && !cell.hasChildNodes()) {
+                    const cellIndex = parseInt(cell.dataset.index);
+                    const expectedShape = currentLevelData.target[cellIndex];
+
+                    if (expectedShape === type) {
+                        const newShape = document.createElement('div');
+                        newShape.className = 'shape';
+                        newShape.innerHTML = SHAPES_HTML[type];
+                        cell.appendChild(newShape);
+                        shapeDiv.remove();
+
+                        placedCount++;
+                        messageArea.textContent = "欣賞你，你好努力！💪";
+                        messageArea.style.color = "var(--primary-color)";
+
+                        if (placedCount === currentLevelData.requiredCount) {
+                            levelComplete();
+                        }
+                    } else {
+                        messageArea.textContent = "欣賞你努力、再試一次！💪";
+                        messageArea.style.color = "#D32F2F";
+                    }
+                }
+
+                currentHoverCell = null;
+                if (activePointerId !== null) {
+                    try { shapeDiv.releasePointerCapture(activePointerId); } catch (err) {}
+                    activePointerId = null;
+                }
+            };
+
+            shapeDiv.addEventListener('pointerup', endDrag);
+            shapeDiv.addEventListener('pointercancel', endDrag);
 
             shapePool.appendChild(shapeDiv);
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            this.classList.add('drag-over');
-        }
-
-        function handleDragLeave(e) {
-            this.classList.remove('drag-over');
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            this.classList.remove('drag-over');
-            
-            const cellIndex = parseInt(this.dataset.index);
-            const expectedShape = currentLevelData.target[cellIndex];
-
-            if (!this.hasChildNodes()) {
-                if (expectedShape === draggedShapeType) {
-                    // 放對了
-                    const newShape = document.createElement('div');
-                    newShape.className = 'shape';
-                    newShape.innerHTML = SHAPES_HTML[draggedShapeType];
-                    this.appendChild(newShape);
-                    draggedElement.remove();
-                    
-                    placedCount++;
-                    messageArea.textContent = "欣賞你，你好努力！";
-                    messageArea.style.color = "var(--primary-color)";
-
-                    if (placedCount === currentLevelData.requiredCount) {
-                        levelComplete();
-                    }
-                } else {
-                    // 放錯了給予溫和提示
-                    messageArea.textContent = "試試看另一個格子？你可以的！";
-                }
-            }
         }
 
         function levelComplete() {
             earnedStars++;
             updateStars();
-            
-            messageArea.textContent = "太棒了，完成這頁了！";
+            messageArea.textContent = "太棒了，完成這頁了！🌟";
             messageArea.style.color = "var(--success-color)";
-            
             currentLevel++;
-            
+
             if (currentLevel < MAX_LEVELS) {
                 nextBtn.style.display = 'block';
             } else {
-                // 延遲一下顯示最終大畫面，讓小朋友能看到最後一顆星星飛進去
-                setTimeout(() => {
-                    showEndScreen();
-                }, 800);
+                setTimeout(showEndScreen, 700);
             }
         }
 
@@ -408,10 +467,10 @@
         function showEndScreen() {
             gameWrapper.style.display = 'none';
             messageArea.textContent = '';
+            nextBtn.style.display = 'none';
             endScreen.style.display = 'flex';
         }
 
-        // 初次啟動遊戲
         startGame();
     </script>
 </body>
