@@ -6,10 +6,11 @@
     <title>遊戲王 - 幾何圖形對對碰</title>
     <style>
         :root {
-            --primary-color: #2B579A; /* 柔和的藍色 */
+            --primary-color: #2B579A; 
             --bg-color: #F7F9FC;
             --grid-border: #333333;
             --success-color: #4CAF50;
+            --star-color: #FFD700;
         }
 
         body {
@@ -20,13 +21,22 @@
             align-items: center;
             margin: 0;
             padding: 20px;
-            touch-action: none; /* 防止觸控螢幕意外捲動 */
+            touch-action: none; 
         }
 
         h1 {
             color: var(--primary-color);
             font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        #star-container {
+            font-size: 32px;
+            letter-spacing: 5px;
+            min-height: 45px;
             margin-bottom: 10px;
+            color: var(--star-color);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
 
         #message-area {
@@ -37,6 +47,14 @@
             margin-bottom: 20px;
             text-align: center;
             transition: color 0.3s;
+        }
+
+        /* 遊戲主要區域 */
+        #game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
         }
 
         .game-area {
@@ -54,10 +72,13 @@
         }
 
         .board-label {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: #555;
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: #333;
             font-weight: bold;
+            background: #e9eff7;
+            padding: 5px 15px;
+            border-radius: 20px;
         }
 
         .grid {
@@ -78,7 +99,6 @@
             box-sizing: border-box;
         }
 
-        /* 玩家格子的拖放回饋 */
         .player-cell.drag-over {
             background-color: #E3F2FD;
             border: 2px dashed var(--primary-color);
@@ -109,11 +129,33 @@
             transform: scale(1.1);
         }
 
-        /* SVG 樣式 */
         .shape svg {
             width: 100%;
             height: 100%;
-            pointer-events: none; /* 確保拖曳事件只綁定在外層容器 */
+            pointer-events: none; 
+        }
+
+        /* 結局大畫面 */
+        #end-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: popIn 0.5s ease-out;
+            margin-top: 20px;
+        }
+
+        .big-icon {
+            font-size: 100px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .end-message {
+            font-size: 28px;
+            color: var(--success-color);
+            font-weight: bold;
+            margin-bottom: 30px;
         }
 
         button {
@@ -124,110 +166,152 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            display: none;
-            margin-top: 20px;
             font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
         }
 
-        button:hover {
-            background-color: #1A3C6D;
+        button:active {
+            transform: translateY(2px);
+        }
+
+        #next-btn {
+            display: none;
+            margin-top: 20px;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
     </style>
 </head>
 <body>
 
     <h1>強化視覺辨識與記憶力</h1>
-    <div id="message-area">請把圖形放到右邊相同的位置！</div>
+    
+    <div id="star-container"></div>
+    
+    <div id="message-area">準備好就開始吧！</div>
 
-    <div class="game-area">
-        <div class="board-container">
-            <div class="board-label">觀察區 (左)</div>
-            <div id="target-grid" class="grid"></div>
+    <div id="game-wrapper">
+        <div class="game-area">
+            <div class="board-container">
+                <div class="board-label">先觀察 🔎</div>
+                <div id="target-grid" class="grid"></div>
+            </div>
+            <div class="board-container">
+                <div class="board-label">試一試 💪</div>
+                <div id="player-grid" class="grid"></div>
+            </div>
         </div>
-        <div class="board-container">
-            <div class="board-label">作答區 (右)</div>
-            <div id="player-grid" class="grid"></div>
-        </div>
+
+        <div class="shape-pool" id="shape-pool">
+            </div>
+
+        <button id="next-btn" onclick="nextLevel()">下一頁</button>
     </div>
 
-    <div class="shape-pool" id="shape-pool">
-        </div>
-
-    <button id="next-btn" onclick="nextLevel()">下一關</button>
+    <div id="end-screen">
+        <div class="big-icon">🏆✨</div>
+        <div class="end-message">太棒了，任務完成！</div>
+        <button onclick="startGame()">再玩一次</button>
+    </div>
 
     <script>
-        // 幾何圖形的 SVG 定義
-        const SHAPES = {
+        const SHAPES_HTML = {
             triangle: '<svg viewBox="0 0 100 100"><polygon points="50,10 90,85 10,85" fill="none" stroke="#2B579A" stroke-width="6"/></svg>',
             circle: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="#2B579A" stroke-width="6"/></svg>',
             rectangle: '<svg viewBox="0 0 100 100"><rect x="15" y="30" width="70" height="40" fill="none" stroke="#2B579A" stroke-width="6"/></svg>'
         };
-
-        // 關卡設計 (對應圖片的九宮格位置 0-8)
-        // [0, 1, 2]
-        // [3, 4, 5]
-        // [6, 7, 8]
-        const LEVELS = [
-            { // 圖片第一組
-                target: {0: 'triangle', 3: 'circle', 6: 'rectangle'},
-                requiredCount: 3
-            },
-            { // 圖片第二組
-                target: {0: 'triangle', 2: 'rectangle', 4: 'circle'},
-                requiredCount: 3
-            },
-            { // 圖片第三組
-                target: {4: 'circle', 7: 'triangle', 8: 'rectangle'},
-                requiredCount: 3
-            }
-        ];
+        const SHAPE_TYPES = ['triangle', 'circle', 'rectangle'];
 
         let currentLevel = 0;
+        const MAX_LEVELS = 5;
+        let earnedStars = 0;
+        
+        let currentLevelData = null;
         let placedCount = 0;
         let draggedShapeType = null;
         let draggedElement = null;
 
+        // DOM 元素
         const targetGrid = document.getElementById('target-grid');
         const playerGrid = document.getElementById('player-grid');
         const shapePool = document.getElementById('shape-pool');
         const messageArea = document.getElementById('message-area');
         const nextBtn = document.getElementById('next-btn');
+        const starContainer = document.getElementById('star-container');
+        const gameWrapper = document.getElementById('game-wrapper');
+        const endScreen = document.getElementById('end-screen');
 
+        // 核心邏輯：隨機生成關卡
+        function generateRandomLevel() {
+            let positions = [];
+            // 在 0-8 之中抽出 3 個不重複的數字
+            while(positions.length < 3) {
+                let r = Math.floor(Math.random() * 9);
+                if(positions.indexOf(r) === -1) positions.push(r);
+            }
+            
+            let targetMap = {};
+            // 將三個圖形隨機綁定到抽出的位置上
+            targetMap[positions[0]] = 'triangle';
+            targetMap[positions[1]] = 'circle';
+            targetMap[positions[2]] = 'rectangle';
+
+            return { target: targetMap, requiredCount: 3 };
+        }
+
+        // 初始化整個遊戲（包含「再玩一次」）
+        function startGame() {
+            currentLevel = 0;
+            earnedStars = 0;
+            updateStars();
+            
+            endScreen.style.display = 'none';
+            gameWrapper.style.display = 'flex';
+            
+            initLevel();
+        }
+
+        // 渲染單一關卡
         function initLevel() {
             placedCount = 0;
             targetGrid.innerHTML = '';
             playerGrid.innerHTML = '';
             shapePool.innerHTML = '';
-            messageArea.textContent = '請把圖形放到右邊相同的位置！';
+            
+            messageArea.textContent = `第 ${currentLevel + 1} 頁：請把它們放到正確的位置！`;
             messageArea.style.color = 'var(--primary-color)';
             nextBtn.style.display = 'none';
 
-            const levelData = LEVELS[currentLevel];
+            // 產生隨機位置
+            currentLevelData = generateRandomLevel();
 
             // 建立 3x3 網格
             for (let i = 0; i < 9; i++) {
-                // 左側目標網格
+                // 左側：先觀察
                 const targetCell = document.createElement('div');
                 targetCell.className = 'cell';
-                if (levelData.target[i]) {
-                    targetCell.innerHTML = `<div class="shape">${SHAPES[levelData.target[i]]}</div>`;
+                if (currentLevelData.target[i]) {
+                    targetCell.innerHTML = `<div class="shape">${SHAPES_HTML[currentLevelData.target[i]]}</div>`;
                 }
                 targetGrid.appendChild(targetCell);
 
-                // 右側玩家網格
+                // 右側：試一試
                 const playerCell = document.createElement('div');
                 playerCell.className = 'cell player-cell';
                 playerCell.dataset.index = i;
-                
-                // 設定拖放接收事件
                 playerCell.addEventListener('dragover', handleDragOver);
                 playerCell.addEventListener('dragleave', handleDragLeave);
                 playerCell.addEventListener('drop', handleDrop);
                 playerGrid.appendChild(playerCell);
             }
 
-            // 在下方池子產生可拖曳的圖形
-            ['triangle', 'circle', 'rectangle'].forEach(type => {
+            // 在下方池子隨機排序產生三個可拖曳圖形
+            let poolShapes = [...SHAPE_TYPES].sort(() => Math.random() - 0.5);
+            poolShapes.forEach(type => {
                 createDraggableShape(type);
             });
         }
@@ -236,14 +320,13 @@
             const shapeDiv = document.createElement('div');
             shapeDiv.className = 'shape draggable';
             shapeDiv.dataset.type = type;
-            shapeDiv.innerHTML = SHAPES[type];
+            shapeDiv.innerHTML = SHAPES_HTML[type];
             shapeDiv.draggable = true;
 
             shapeDiv.addEventListener('dragstart', (e) => {
                 draggedShapeType = type;
                 draggedElement = shapeDiv;
                 e.dataTransfer.effectAllowed = 'move';
-                // 延遲隱藏原本的元素，確保有拖曳殘影
                 setTimeout(() => shapeDiv.style.opacity = '0.5', 0);
             });
 
@@ -270,62 +353,66 @@
             this.classList.remove('drag-over');
             
             const cellIndex = parseInt(this.dataset.index);
-            const levelData = LEVELS[currentLevel];
-            const expectedShape = levelData.target[cellIndex];
+            const expectedShape = currentLevelData.target[cellIndex];
 
-            // 檢查該格子是否為空，且放下的圖形是否與目標一致
             if (!this.hasChildNodes()) {
                 if (expectedShape === draggedShapeType) {
                     // 放對了
                     const newShape = document.createElement('div');
                     newShape.className = 'shape';
-                    newShape.innerHTML = SHAPES[draggedShapeType];
+                    newShape.innerHTML = SHAPES_HTML[draggedShapeType];
                     this.appendChild(newShape);
-                    
-                    // 從池子移除該圖形
                     draggedElement.remove();
                     
                     placedCount++;
-                    
-                    // 正向回饋
                     messageArea.textContent = "欣賞你，你好努力！";
                     messageArea.style.color = "var(--primary-color)";
 
-                    // 檢查是否過關
-                    if (placedCount === levelData.requiredCount) {
+                    if (placedCount === currentLevelData.requiredCount) {
                         levelComplete();
                     }
                 } else {
-                    // 放錯了（或放到了不需要放圖形的格子），給予溫和提示，不播錯音效
+                    // 放錯了給予溫和提示
                     messageArea.textContent = "試試看另一個格子？你可以的！";
                 }
             }
         }
 
         function levelComplete() {
-            messageArea.textContent = "太棒了，任務完成！";
+            earnedStars++;
+            updateStars();
+            
+            messageArea.textContent = "太棒了，完成這頁了！";
             messageArea.style.color = "var(--success-color)";
             
-            if (currentLevel < LEVELS.length - 1) {
+            currentLevel++;
+            
+            if (currentLevel < MAX_LEVELS) {
                 nextBtn.style.display = 'block';
             } else {
-                nextBtn.textContent = '重新開始';
-                nextBtn.style.display = 'block';
-                nextBtn.onclick = () => {
-                    currentLevel = 0;
-                    initLevel();
-                    nextBtn.onclick = nextLevel; // 恢復下一關的綁定
-                };
+                // 延遲一下顯示最終大畫面，讓小朋友能看到最後一顆星星飛進去
+                setTimeout(() => {
+                    showEndScreen();
+                }, 800);
             }
         }
 
         function nextLevel() {
-            currentLevel++;
             initLevel();
         }
 
-        // 啟動遊戲
-        initLevel();
+        function updateStars() {
+            starContainer.innerHTML = '⭐'.repeat(earnedStars);
+        }
+
+        function showEndScreen() {
+            gameWrapper.style.display = 'none';
+            messageArea.textContent = '';
+            endScreen.style.display = 'flex';
+        }
+
+        // 初次啟動遊戲
+        startGame();
     </script>
 </body>
 </html>
